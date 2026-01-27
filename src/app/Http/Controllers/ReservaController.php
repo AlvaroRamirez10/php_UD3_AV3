@@ -13,6 +13,8 @@ class ReservaController extends Controller
     public function index()
     {
         //
+        $reservas = Reserva::all();
+        return view('reservas.index', compact('reservas'));
     }
 
     /**
@@ -21,6 +23,8 @@ class ReservaController extends Controller
     public function create()
     {
         //
+        return view('reservas.create');
+
     }
 
     /**
@@ -29,6 +33,12 @@ class ReservaController extends Controller
     public function store(Request $request)
     {
         //
+        $validatedData = $request->validate([
+            'alumno_id' => 'required|exists:alumnos,id',
+            'libro_id' => 'required|exists:libros,id',
+            'fecha_reserva' => 'required|date',
+            'fecha_devolucion' => 'nullable|date|after_or_equal:fecha_reserva',
+        ]);
     }
 
     /**
@@ -37,6 +47,7 @@ class ReservaController extends Controller
     public function show(Reserva $reserva)
     {
         //
+        return view('reservas.show', compact('reserva'));
     }
 
     /**
@@ -45,6 +56,7 @@ class ReservaController extends Controller
     public function edit(Reserva $reserva)
     {
         //
+        return view('reservas.edit', compact('reserva'));
     }
 
     /**
@@ -53,6 +65,14 @@ class ReservaController extends Controller
     public function update(Request $request, Reserva $reserva)
     {
         //
+        $validatedData = $request->validate([
+            'alumno_id' => 'required|exists:alumnos,id',
+            'libro_id' => 'required|exists:libros,id',
+            'fecha_reserva' => 'required|date',
+            'fecha_devolucion' => 'nullable|date|after_or_equal:fecha_reserva',
+        ]);
+        $reserva->update($validatedData);
+        return redirect()->route('reservas.index');
     }
 
     /**
@@ -61,5 +81,7 @@ class ReservaController extends Controller
     public function destroy(Reserva $reserva)
     {
         //
+        $reserva->delete();
+        return redirect()->route('reservas.index');
     }
 }

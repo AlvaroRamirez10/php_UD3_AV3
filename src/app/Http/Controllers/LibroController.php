@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Libro;
 use Illuminate\Http\Request;
+use App\Models\Autor;
 
 class LibroController extends Controller
 {
@@ -12,15 +13,19 @@ class LibroController extends Controller
      */
     public function index()
     {
-        //
+        // Usamos with('autor') para que en la lista aparezca el nombre del autor, no solo el ID
+        $libros = Libro::with('autor')->get();
+        return view('libros.index', compact('libros'));
     }
 
     /**
      * Show the form for creating a new resource.
-     */
+            */
     public function create()
     {
         //
+        $autores = Autor::all();
+        return view('libros.create', compact('autores'));
     }
 
     /**
@@ -29,6 +34,14 @@ class LibroController extends Controller
     public function store(Request $request)
     {
         //
+        $validatedData = $request->validate([
+            'titulo' => 'required|string|max:255',
+            'autor_id' => 'required|exists:autores,id',
+            'isbn' => 'required|string|unique:libros,isbn',
+            'anio_publicacion' => 'nullable|integer',
+        ]);
+        Libro::create($validatedData);
+        return redirect()->route('libros.index');
     }
 
     /**
@@ -37,6 +50,7 @@ class LibroController extends Controller
     public function show(Libro $libro)
     {
         //
+        return view('libros.show', compact('libro'));
     }
 
     /**
@@ -45,6 +59,8 @@ class LibroController extends Controller
     public function edit(Libro $libro)
     {
         //
+        $autores = Autor::all();
+        return view('libros.edit', compact('libro', 'autores'));
     }
 
     /**
@@ -53,6 +69,14 @@ class LibroController extends Controller
     public function update(Request $request, Libro $libro)
     {
         //
+        $validatedData = $request->validate([
+            'titulo' => 'required|string|max:255',
+            'autor_id' => 'required|exists:autores,id',
+            'isbn' => 'required|string|unique:libros,isbn,' . $libro->id,
+            'anio_publicacion' => 'nullable|integer',
+        ]);
+        $libro->update($validatedData);
+        return redirect()->route('libros.index');
     }
 
     /**
@@ -61,5 +85,7 @@ class LibroController extends Controller
     public function destroy(Libro $libro)
     {
         //
+        $libro->delete();
+        return redirect()->route('libros.index');
     }
 }

@@ -13,6 +13,8 @@ class AutorController extends Controller
     public function index()
     {
         //
+        $autores = Autor::all();
+        return view('autores.index', compact('autores'));
     }
 
     /**
@@ -21,6 +23,8 @@ class AutorController extends Controller
     public function create()
     {
         //
+        return view('autores.create');
+
     }
 
     /**
@@ -29,6 +33,12 @@ class AutorController extends Controller
     public function store(Request $request)
     {
         //
+        $validatedData = $request->validate([
+            'nombre' => 'required|string|max:255',
+            'biografia' => 'nullable|string',
+        ]);
+        Autor::create($validatedData);
+        return redirect()->route('autores.index');
     }
 
     /**
@@ -37,6 +47,7 @@ class AutorController extends Controller
     public function show(Autor $autor)
     {
         //
+        return view('autores.show', compact('autor'));
     }
 
     /**
@@ -45,6 +56,8 @@ class AutorController extends Controller
     public function edit(Autor $autor)
     {
         //
+        $autores = Autor::all();
+        return view('autores.edit', compact('autor', 'autores'));
     }
 
     /**
@@ -53,6 +66,12 @@ class AutorController extends Controller
     public function update(Request $request, Autor $autor)
     {
         //
+        $validatedData = $request->validate([
+            'nombre' => 'required|string|max:255',
+            'biografia' => 'nullable|string',
+        ]);
+        $autor->update($validatedData);
+        return redirect()->route('autores.index');
     }
 
     /**
@@ -61,5 +80,7 @@ class AutorController extends Controller
     public function destroy(Autor $autor)
     {
         //
+        $autor->delete();
+        return redirect()->route('autores.index');
     }
 }

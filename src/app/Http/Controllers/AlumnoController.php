@@ -13,6 +13,8 @@ class AlumnoController extends Controller
     public function index()
     {
         //
+        $alumnos = Alumno::all();
+        return view('alumnos.index', compact('alumnos'));
     }
 
     /**
@@ -21,6 +23,7 @@ class AlumnoController extends Controller
     public function create()
     {
         //
+        return view('alumnos.create');
     }
 
     /**
@@ -29,6 +32,13 @@ class AlumnoController extends Controller
     public function store(Request $request)
     {
         //
+        $validatedData = $request->validate([
+            'nombre' => 'required|string|max:255',
+            'email' => 'required|email|unique:alumnos,email',
+            'telefono' => 'nullable|string|max:20',
+        ]);
+        Alumno::create($validatedData);
+        return redirect()->route('alumnos.index');
     }
 
     /**
@@ -37,6 +47,7 @@ class AlumnoController extends Controller
     public function show(Alumno $alumno)
     {
         //
+        return view('alumnos.show', compact('alumno'));
     }
 
     /**
@@ -45,6 +56,8 @@ class AlumnoController extends Controller
     public function edit(Alumno $alumno)
     {
         //
+        $alumnos = Alumno::all();
+        return view('alumnos.edit', compact('alumno', 'alumnos'));
     }
 
     /**
@@ -53,6 +66,13 @@ class AlumnoController extends Controller
     public function update(Request $request, Alumno $alumno)
     {
         //
+        $validatedData = $request->validate([
+            'nombre' => 'required|string|max:255',
+            'email' => 'required|email|unique:alumnos,email,' . $alumno->id,
+            'telefono' => 'nullable|string|max:20',
+        ]);
+        $alumno->update($validatedData);
+        return redirect()->route('alumnos.index');
     }
 
     /**
@@ -61,5 +81,7 @@ class AlumnoController extends Controller
     public function destroy(Alumno $alumno)
     {
         //
+        $alumno->delete();
+        return redirect()->route('alumnos.index');
     }
 }
