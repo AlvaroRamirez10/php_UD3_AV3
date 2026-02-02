@@ -24,7 +24,6 @@ class AutorController extends Controller
     {
         //
         return view('autores.create');
-
     }
 
     /**
@@ -35,7 +34,8 @@ class AutorController extends Controller
         //
         $validatedData = $request->validate([
             'nombre' => 'required|string|max:255',
-            'biografia' => 'nullable|string',
+            'apellidos' => 'required|string|max:255',
+            'nacionalidad' => 'required|string|max:255',
         ]);
         Autor::create($validatedData);
         return redirect()->route('autores.index');
@@ -68,7 +68,8 @@ class AutorController extends Controller
         //
         $validatedData = $request->validate([
             'nombre' => 'required|string|max:255',
-            'biografia' => 'nullable|string',
+            'apellidos' => 'required|string|max:255',
+            'nacionalidad' => 'required|string|max:255',
         ]);
         $autor->update($validatedData);
         return redirect()->route('autores.index');
