@@ -9,9 +9,7 @@
 <body>
     <nav>
         <a href="{{ route('autores.index') }}">Ver Autores</a> |
-        <a href="{{ route('autores.create') }}">Nuevo Autor</a> |
         <a href="{{ route('libros.index') }}">Ver Libros</a> |
-        <a href="{{ route('libros.create') }}">Nuevo Libro</a>
     </nav>
     <hr>
 

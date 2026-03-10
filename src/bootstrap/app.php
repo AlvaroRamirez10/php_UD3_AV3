@@ -12,6 +12,9 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         //
+        $middleware->alias([
+            'verificar.profesor' => \App\Http\Middleware\VerificarProfesor::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

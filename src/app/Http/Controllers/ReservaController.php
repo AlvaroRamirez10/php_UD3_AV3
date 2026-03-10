@@ -2,86 +2,87 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Libro;
 use App\Models\Reserva;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ReservaController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    // Mostrar las reservas del alumno autenticado
+    public function misReservas()
     {
-        //
-        $reservas = Reserva::all();
-        return view('reservas.index', compact('reservas'));
+        $reservas = Reserva::where('usuario_id', auth()->id())
+            ->with('libro')
+            ->orderBy('created_at', 'desc')
+            ->get();
+        
+        return view('reservas.mis-reservas', compact('reservas'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    // Guardar una nueva reserva
+    public function guardar(Request $request)
     {
-        //
-        return view('reservas.create');
-
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
-        $validatedData = $request->validate([
-            'alumno_id' => 'required|exists:alumnos,id',
+        // Validar los datos del formulario
+        $request->validate([
             'libro_id' => 'required|exists:libros,id',
-            'fecha_reserva' => 'required|date',
-            'fecha_devolucion' => 'nullable|date|after_or_equal:fecha_reserva',
+            'fecha_inicio' => 'required|date|after_or_equal:today',
+            'fecha_fin' => 'required|date|after:fecha_inicio',
+        ], [
+            'libro_id.required' => 'Debes seleccionar un libro.',
+            'libro_id.exists' => 'El libro seleccionado no existe.',
+            'fecha_inicio.required' => 'La fecha de inicio es obligatoria.',
+            'fecha_inicio.after_or_equal' => 'La fecha de inicio debe ser hoy o posterior.',
+            'fecha_fin.required' => 'La fecha de fin es obligatoria.',
+            'fecha_fin.after' => 'La fecha de fin debe ser posterior a la fecha de inicio.',
         ]);
-    }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Reserva $reserva)
-    {
-        //
-        return view('reservas.show', compact('reserva'));
-    }
+        // Usar transacción para asegurar consistencia
+        DB::beginTransaction();
+        
+        try {
+            // Buscar el libro
+            $libro = Libro::findOrFail($request->libro_id);
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Reserva $reserva)
-    {
-        //
-        return view('reservas.edit', compact('reserva'));
-    }
+            // Verificar disponibilidad del libro para el periodo solicitado
+            if (!$libro->estaDisponible($request->fecha_inicio, $request->fecha_fin)) {
+                DB::rollBack();
+                return redirect()->back()
+                    ->with('error', 'El libro no está disponible para el periodo seleccionado.')
+                    ->withInput();
+            }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, Reserva $reserva)
-    {
-        //
-        $validatedData = $request->validate([
-            'alumno_id' => 'required|exists:alumnos,id',
-            'libro_id' => 'required|exists:libros,id',
-            'fecha_reserva' => 'required|date',
-            'fecha_devolucion' => 'nullable|date|after_or_equal:fecha_reserva',
-        ]);
-        $reserva->update($validatedData);
-        return redirect()->route('reservas.index');
-    }
+            // Verificar que hay libros disponibles
+            if ($libro->cantidad_disponible <= 0) {
+                DB::rollBack();
+                return redirect()->back()
+                    ->with('error', 'No hay ejemplares disponibles de este libro.')
+                    ->withInput();
+            }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Reserva $reserva)
-    {
-        //
-        $reserva->delete();
-        return redirect()->route('reservas.index');
+            // Crear la reserva
+            Reserva::create([
+                'usuario_id' => auth()->id(),
+                'libro_id' => $request->libro_id,
+                'fecha_inicio' => $request->fecha_inicio,
+                'fecha_fin' => $request->fecha_fin,
+                'estado' => 'pendiente',
+            ]);
+
+            // Restar un libro disponible
+            $libro->cantidad_disponible = $libro->cantidad_disponible - 1;
+            $libro->save();
+
+            DB::commit();
+
+            return redirect()->route('reservas.mis-reservas')
+                ->with('success', 'Reserva realizada correctamente. Puedes recoger el libro en la fecha indicada.');
+                
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()
+                ->with('error', 'Hubo un error al procesar la reserva. Inténtalo de nuevo.')
+                ->withInput();
+        }
     }
 }
